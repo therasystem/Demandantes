@@ -4,13 +4,14 @@ require_once("../controle/conexao.gti.php");
 
 class clsUsuario {
 
+    // CAMPOS PRIVADOS-----------------------------------------
     private $codigo;
-    private $NOMEUSU;
-    private $LOGINUSU;
-    private $SENHAUSU;
-    private $IDENTIDADE;
-    private $IDPERMISSAO;
+    private $login;
+    private $senha;
+    private $nome;
+    private $cargo;
 
+    //Mï¿½TODOS------------------------------------------------------
     public function getCodigo() {
         return $this->codigo;
     }
@@ -19,108 +20,76 @@ class clsUsuario {
         $this->codigo = $codigo;
     }
 
-    public function getNOMEUSU() {
-        return $this->NOMEUSU;
+    public function getLogin() {
+        return $this->login;
     }
 
-    public function setNOMEUSU($NOMEUSU) {
-        $this->NOMEUSU = $NOMEUSU;
+    public function setLogin($login) {
+        $this->login = $login;
     }
 
-    public function getLOGINUSU() {
-        return $this->LOGINUSU;
+    public function getSenha() {
+        return $this->senha;
     }
 
-    public function setLOGINUSU($LOGINUSU) {
-        $this->LOGINUSU = $LOGINUSU;
+    public function setSenha($senha) {
+        $this->senha = $senha;
     }
 
-    public function getSENHAUSU() {
-        return $this->SENHAUSU;
+    public function getNome() {
+        return $this->nome;
     }
 
-    public function setSENHAUSU($SENHAUSU) {
-        $this->SENHAUSU = $SENHAUSU;
+    public function setNome($nome) {
+        $this->nome = $nome;
     }
 
-    public function getIDENTIDADE() {
-        return $this->IDENTIDADE;
+    public function getCargo() {
+        return $this->cargo;
     }
 
-    public function setIDENTIDADE($IDENTIDADE) {
-        $this->IDENTIDADE = $IDENTIDADE;
-    }
-
-    public function getIDPERMISSAO() {
-        return $this->IDPERMISSAO;
-    }
-
-    public function setIDPERMISSAO($IDPERMISSAO) {
-        $this->IDPERMISSAO = $IDPERMISSAO;
+    public function setCargo($cargo) {
+        $this->cargo = $cargo;
     }
 
     function __construct() {
-
-        $this->IDUSUARIO = "";
-        $this->NOMEUSU = "";
-        $this->LOGINUSU = "";
-        $this->SENHAUSU = "";
-        $this->IDENTIDADE = "";
-        $this->IDPERMISSAO = "";
+        $this->codigo = "";
+        $this->login = "";
+        $this->senha = "";
+        $this->nome = "";
+        $this->cargo = "";
     }
 
-//Mï¿½todo para excluir um cargo
-    public function Excluir() {
-        $SQL = 'DELETE FROM usuario WHERE IDUSUARIO=' . $this->codigo . ';';
-
+    //Mï¿½todo para autenticar os usuarios cadastrados para acessar o sistema
+    function Autentica($login, $senha) {
+        $SQL = 'SELECT * FROM usuario WHERE login=\'' . trim($login) . '\' AND
+        senha=md5(\'' . trim($senha) . '\');';
         $con = new gtiConexao();
         $con->gtiConecta();
-        $con->gtiExecutaSQL($SQL);
+        $tbl = $con->gtiPreencheTabela($SQL);
         $con->gtiDesconecta();
+
+        $existe = false;
+
+        if ($tbl->RecordCount() > 0) {
+            foreach ($tbl as $chave => $linha) {
+                $this->codigo = $linha['ID'];
+                $this->nome = $linha['NOME'];
+                $this->login = $linha['LOGIN'];
+                $this->senha = $linha['SENHA'];
+                $this->cargo = $linha['CARGO'];
+            }
+            $existe = true;
+        }
+
+        return $existe;
     }
 
-//Metodo para alterar uma cargo
-    function Alterar() {
-        $SQL = "UPDATE usuario SET 
-                NOMEUSU ='" . $this->NOMEUSU . "',
-                LOGINUSU ='" . $this->LOGINUSU . "',
-                SENHAUSU =(SELECT MD5('" . $this->SENHAUSU . "')),
-                IDENTIDADE ='" . $this->IDENTIDADE . "',
-                IDPERMISSAO ='" . $this->IDPERMISSAO . "'
-                WHERE IDUSUARIO='" . $this->codigo . "'";
-
-//die($SQL);
-
-        $con = new gtiConexao();
-        $con->gtiConecta();
-        $con->gtiExecutaSQL($SQL);
-        $con->gtiDesconecta();
-    }
-
-    public function Salvar() {
-
-        $SQL = "INSERT INTO usuario (
-            NOMEUSU, LOGINUSU, SENHAUSU, IDENTIDADE, IDPERMISSAO       
-            ) VALUES (
-            '" . $this->NOMEUSU . "','" . $this->LOGINUSU . "',
-            (SELECT MD5('" . $this->SENHAUSU . "')),'" . $this->IDENTIDADE . "', '" . $this->IDPERMISSAO . "');";
-
-//die($SQL);
-
-        $con = new gtiConexao();
-        $con->gtiConecta();
-        $con->gtiExecutaSQL($SQL);
-        $con->gtiDesconecta();
-    }
-
-//Mï¿½todo que lista as cargo em um array para preencher o grid
-
-
-    public function preencheDados($cod) {
-
-        $SQL = "SELECT *
-            FROM usuario 
-            WHERE IDUSUARIO = '" . $cod . "'";
+    public function ListaComboUsuarioCargoALL($idUsu = "") {
+        $SQL = 'SELECT us.id, CONCAT(us.nome, " - ", ca.nomecargo) nome
+                FROM usuario us
+                INNER JOIN cargo ca
+                ON us.cargo = ca.idcargo';
 
 
         $con = new gtiConexao();
@@ -128,72 +97,167 @@ class clsUsuario {
         $tbl = $con->gtiPreencheTabela($SQL);
         $con->gtiDesconecta();
 
-        foreach ($tbl as $chave => $linha) {
+        $drop = "";
+        $select = "";
 
-            $this->setCodigo($linha['IDUSUARIO']);
-            $this->setNOMEUSU($linha['NOMEUSU']);
-            $this->setLOGINUSU($linha['LOGINUSU']);
-            $this->setSENHAUSU($linha['SENHAUSU']);
-            $this->setIDENTIDADE($linha['IDENTIDADE']);
-            $this->setIDPERMISSAO($linha['IDPERMISSAO']);
+        foreach ($tbl as $chave => $linha) {
+            $id = $linha['id'];
+            $nome = htmlentities($linha['nome']);
+
+            if ($id == $idUsu) {
+                $drop .= '<option value="' . $id . '" selected>' . $nome . '</option>';
+                $select = 1;
+            } else {
+                $drop .= '<option value="' . $id . '">' . $nome . '</option>';
+            }
+        }
+        if ($select == "" && $idUsu != "") {
+            $drop .= '<option value="0" selected>Não Selecionado</option>';
+        }
+
+        return $drop;
+    }
+
+    // Mï¿½todo que captura o usuario de acordo com o cï¿½digo informado
+
+    function SelecionaPorCodigo($codigo) {
+        $SQL = 'SELECT id, login, senha, nome FROM usuario WHERE id=\'' . trim($codigo) . '\';';
+
+        $con = new gtiConexao();
+        $con->gtiConecta();
+        $tbl = $con->gtiPreencheTabela($SQL);
+        $con->gtiDesconecta();
+
+        if ($tbl->RecordCount() > 0) {
+            foreach ($tbl as $chave => $linha) {
+                $this->codigo = $linha['id'];
+                $this->login = $linha['login'];
+                $this->senha = $linha['senha'];
+                $this->nome = $linha['nome'];
+            }
+        } else {
+            $this->__construct();
         }
     }
 
-    public function ListaUsuario($pesq = "") {
+    public function Excluir($codigo) {
 
+        $SQL = 'SELECT 	*  FROM obra WHERE idusu = ' . $codigo . ' OR idusu2 = ' . $codigo . '';
 
-        $html = '
-            <div style="margin-top: 1px; float: left">
-                            <input type="text" name="pesquisa" value="' . $pesq . '" class="form-control">
-                        </div>
-                    <div style="float: left; margin-left: 1%">
-                    <a type="submit"  onclick = "document.form1.submit();" class="btn btn-primary">Pesquisar</a>';
-        if ($_SESSION['permissao'] != 3) {
-            $html .= '<a type="submit" href = "usuario_alteracao.frm.php" style="margin-left:2px"  class="btn btn-success">Adicionar</a>';
-        }
-        $html .= '<a href="../visao/menuadministrador.frm.php"  style="margin-left:2px" class="btn btn-primary"">Voltar</a>
-                    </div>
-                              <table class="table1 table1-bordered">
-                              <thead>
-                                <tr>
-                                  <th>CPF</th>
-                                  <th>Nome</th>
-                                  <th>Entidade</th>
-                                  <th>Permissão</th>
-                                  <th>Editar</th>
-                                  <th>Excluir</th>
-                                </tr>
-                              </thead>';
+        $con = new gtiConexao();
+        $con->gtiConecta();
+        $tbl = $con->gtiPreencheTabela($SQL);
+        $con->gtiDesconecta();
 
-        if ($_SESSION['permissao'] == 1) {
-            $WHERE = " 1=1 ";
-        } else if ($_SESSION['permissao'] == 2) {
-            $WHERE = " us.IDENTIDADE = " . $_SESSION['entidade'] . " AND us.IDPERMISSAO <> 1 ";
+        if ($tbl->RecordCount() <= 0) {
+
+            $SQL = "SELECT *
+                FROM usuario 
+                WHERE CARGO = 1 AND ID='" . $codigo . "' ORDER BY ID";
+
+            //die($SQL); 
+            $con1 = new gtiConexao();
+            $con1->gtiConecta();
+            $tbl1 = $con1->gtiPreencheTabela($SQL);
+            $con1->gtiDesconecta();
+            $pos = -1;
+            if ($tbl1->RecordCount() > 0) {
+                $pos = $this->retornaPosicaoSocio($codigo);
+            }
+            //die('aaa'.$pos);
+            $this->editaLiberacaoCompra($pos);
+            //die();
+            $SQL = 'DELETE FROM usuario WHERE ID=' . $codigo . ';';
+            $con = new gtiConexao();
+            $con->gtiConecta();
+            $con->gtiExecutaSQL($SQL);
+            $con->gtiDesconecta();
+            return true;
         } else {
-            $WHERE = " us.IDUSUARIO = " . $_SESSION['codigo'];
+            return false;
         }
+    }
 
-        $SQL = "SELECT us.IDUSUARIO, us.LOGINUSU, us.NOMEUSU, us.IDPERMISSAO,
-                pe.DESCPERMISSAO, et.NOMEENT
+    //Metodo para alterar uma obra
+    function Alterar() {
+        $SQL = "UPDATE usuario SET 
+		LOGIN='" . $this->login . "',
+		SENHA=MD5('" . $this->senha . "'),
+		NOME='" . $this->nome . "',
+		CARGO='" . $this->cargo . "'
+                WHERE ID='" . $this->codigo . "'";
+
+        //die($SQL);
+
+        $con = new gtiConexao();
+        $con->gtiConecta();
+        $con->gtiExecutaSQL($SQL);
+        $con->gtiDesconecta();
+    }
+
+    //Mï¿½todo que realiza o cadastro de um novo cargo
+    public function Salvar() {
+
+        $SQL = "INSERT INTO usuario (LOGIN, SENHA, NOME, CARGO) VALUES 
+                ('" . $this->login . "',MD5('" . $this->senha . "'),'" . $this->nome . "','" . $this->cargo . "')";
+
+        //die($SQL);
+
+        $con = new gtiConexao();
+        $con->gtiConecta();
+        $con->gtiExecutaSQL($SQL);
+        $con->gtiDesconecta();
+
+        if ($this->cargo == 1) {
+            $this->editaLiberacaoCompraInsert();
+        }
+    }
+
+    //Mï¿½todo que lista as obras em um array para preencher o grid
+    public function ListaUsuarioPesq($pesq = "") {
+
+        $pesquisa = $pesq;
+
+        $html = '<table border = "0" cellspacing = "3" cellpadding = "0">
+                <tr>
+                <td align = "right">Pesquisa:</td>
+                <td><input class = "campo_texto" name = "pesquisa" type = "text" value = "' . $pesquisa . '" size = "40"></td>';
+
+        if ($this->verificaSeCargoDeSocio()) {
+            $html .= '<td title = "Pesquisar" style = "cursor: pointer"><a onclick = "document.form1.submit();" ><img name = "btnsalvar" id = "btnsalvar" src = "../imagens/busca.png" width = "22" height = "22"></a></td>
+                <td title = "Adicionar Usu&aacute;rio" width = "30px" align = "right"><a href = "usuario_alteracao.frm.php"><img name = "btnsalvar" id = "btnsalvar" src = "../imagens/novo.gif" width = "22" ></a></td>';
+        }
+        $html .= '</tr>
+                <table border = "3" cellspacing = "2" cellpadding = "2">
+                <tr height = "2">
+                <th align = "center" class = "small" width = "100px">Nome</th>
+                <th align = "center" class = "small" width = "100px">Login</th>
+                <th align = "center" class = "small" width = "230px">Cargo</th>
+                <th align = "center" class = "small" width = "60px">Editar</th>
+                <th align = "center" class = "small" width = "60px">Apagar</th>
+                </tr>';
+
+        if ($this->verificaSeCargoDeSocio()) {
+            $SQL = "SELECT us.ID, us.LOGIN , us.NOME, ca.NOMECARGO
                 FROM usuario us
-                LEFT JOIN permissao pe
-                ON us.IDPERMISSAO = pe.IDPERMISSAO
-                LEFT JOIN entidade et
-                ON us.IDENTIDADE = et.IDENTIDADE 
-                WHERE " . $WHERE;
-
-        //die(print_r($_SESSION));
+                LEFT JOIN cargo ca
+                ON us.CARGO = ca.IDCARGO 
+                WHERE 1=1";
+        } else {
+            $SQL = "SELECT us.ID, us.LOGIN , us.NOME, ca.NOMECARGO
+                FROM usuario us
+                LEFT JOIN cargo ca
+                ON us.CARGO = ca.IDCARGO 
+                WHERE ID = " . $_SESSION['codigo'];
+        }
 
         if ($pesq != "") {
             $pesq = str_replace(" ", "%", $pesq);
 
-            $SQL.=" AND UPPER(NOMEUSU) LIKE UPPER('%" . $pesq . "%') OR 
-                UPPER(DESCPERMISSAO) LIKE UPPER('%" . $pesq . "%') OR 
-                UPPER(LOGINUSU) LIKE UPPER('%" . $pesq . "%') OR 
-                UPPER(NOMEENT) LIKE UPPER('%" . $pesq . "%') ";
+            $SQL.=" AND UPPER(us.login) LIKE UPPER('%" . $pesq . "%') OR UPPER(us.nome) LIKE UPPER('%" . $pesq . "%') OR UPPER(ca.NOMECARGO) LIKE UPPER('%" . $pesq . "%') ";
         }
 
-        $SQL.=" ORDER BY us.IDPERMISSAO, us.NOMEUSU ";
+        $SQL.=" ORDER BY us.NOME ";
 
         $con = new gtiConexao();
         $con->gtiConecta();
@@ -201,38 +265,198 @@ class clsUsuario {
         $con->gtiDesconecta();
 
         //die($SQL);
-
         foreach ($tbl as $chave => $linha) {
-
-            $pula = false;
-
-            if ($_SESSION['permissao'] == 2) {
-                if ($linha['IDPERMISSAO'] == 2 && $linha['IDUSUARIO'] != $_SESSION['codigo']) {
-                    $pula = true;
-                }
-            }
-
-            if ($pula == false) {
-                $html .= '   <tbody>
-                <td > ' . htmlentities($linha['LOGINUSU']) . ' </td>
-                <td > ' . htmlentities($linha['NOMEUSU']) . ' </td>
-                <td > ' . htmlentities($linha['NOMEENT']) . ' </td>
-                <td > ' . htmlentities($linha['DESCPERMISSAO']) . ' </td>
-                <td ><a href = "usuario_alteracao.frm.php?IDUSUARIO=' . htmlentities($linha['IDUSUARIO']) . '&metodo=1"><img src = "img/edit.png" ></a> </td>
-                <td ><a href = "usuario.exe.php?IDUSUARIO=' . htmlentities($linha['IDUSUARIO']) . '&metodo=2"><img  src = "img/delete.png"  ></a> </td>
-                </tbody>
-                ';
-            }
+            $html .= ' <tr height = "1">
+                <td align = "center" class = "small" width = "250px"> ' . htmlentities($linha['NOME']) . ' </td>
+                <td align = "center" class = "small" width = "150px"> ' . htmlentities($linha['LOGIN']) . ' </td>
+                <td align = "center" class = "small" width = "170px"> ' . htmlentities($linha['NOMECARGO']) . ' </td>
+                <td align = "center"><a href = "usuario_alteracao.frm.php?idusuario=' . htmlentities($linha['ID']) . '&metodo=1"><img border = "0" src = "../imagens/bt_editar.jpg" width = "24px" ></a> </td>
+                <td align = "center"><a href = "usuario.exe.php?idusuario=' . htmlentities($linha['ID']) . '&metodo=2"><img border = "0" src = "../imagens/cancelar.png" width = "20px" ></a> </td>
+                </tr>';
         }
 
 
-        $html .= ' </table>';
-
+        $html .= '</table> </table>';
 
 
         return $html;
     }
 
-}
+    public function preencheDados($cod) {
 
+        $SQL = "SELECT *
+                FROM usuario ob
+                WHERE ID = '" . $cod . "'";
+
+        //die($SQL);
+
+        $con = new gtiConexao();
+        $con->gtiConecta();
+        $tbl = $con->gtiPreencheTabela($SQL);
+        $con->gtiDesconecta();
+
+        foreach ($tbl as $chave => $linha) {
+
+            $this->setCodigo($linha['ID']);
+            $this->setLogin($linha['LOGIN']);
+            $this->setNome($linha['NOME']);
+            $this->setCargo($linha['CARGO']);
+        }
+    }
+
+    public function verificaSocio($resp) {
+
+        $SQL = "SELECT *
+                FROM usuario 
+                WHERE CARGO = 1
+                ORDER BY ID";
+
+        //die($SQL);
+
+        $con = new gtiConexao();
+        $con->gtiConecta();
+        $tbl = $con->gtiPreencheTabela($SQL);
+        $con->gtiDesconecta();
+
+        $count = 0;
+        foreach ($tbl as $chave => $linha) {
+            if ($count == $resp) {
+                if ($linha['ID'] == $_SESSION['codigo']) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+            $count++;
+        }
+    }
+
+    public function retornaPosicaoSocio($codigo) {
+
+        $SQL = "SELECT *
+                FROM usuario 
+                WHERE CARGO = 1 ORDER BY ID";
+
+        //die($SQL); 
+        $con2 = new gtiConexao();
+        $con2->gtiConecta();
+        $tbl2 = $con2->gtiPreencheTabela($SQL);
+        $con2->gtiDesconecta();
+        $count = 0;
+        foreach ($tbl2 as $chave => $linha) {
+            if ($codigo == $linha['ID']) {
+                return $count;
+            }
+            $count++;
+        }
+    }
+
+    public function editaLiberacaoCompra($posicao) {
+
+        $SQL = "SELECT IDCOMPRA, LIBERACAOCOMPRA
+                FROM compra WHERE AUTORIZACOMPRA1 > 0 AND AUTORIZACOMPRA1 > 0 ";
+
+        //die($SQL); 
+        $con2 = new gtiConexao();
+        $con2->gtiConecta();
+        $tbl2 = $con2->gtiPreencheTabela($SQL);
+        $con2->gtiDesconecta();
+
+        foreach ($tbl2 as $chave => $linha) {
+
+            $bin = decbin($linha['LIBERACAOCOMPRA']);
+
+            $totalSocio = $this->buscaNumSocio();
+            while (strlen($bin) != $totalSocio) {
+                $bin = "0" . $bin;
+            }
+
+            $bin{$posicao} = "";
+
+            $SQL = "UPDATE compra SET  
+		LIBERACAOCOMPRA='" . bindec($bin) . "'
+                WHERE IDCOMPRA='" . $linha['IDCOMPRA'] . "'";
+
+            //die($SQL);
+
+            $con = new gtiConexao();
+            $con->gtiConecta();
+            $con->gtiExecutaSQL($SQL);
+            $con->gtiDesconecta();
+        }
+    }
+
+    public function buscaNumSocio() {
+
+        $SQL = "SELECT COUNT(1) NUM
+                FROM USUARIO WHERE CARGO = 1";
+
+        $con = new gtiConexao();
+        $con->gtiConecta();
+        $tbl = $con->gtiPreencheTabela($SQL);
+        $con->gtiDesconecta();
+
+        foreach ($tbl as $chave => $linha) {
+            return $linha['NUM'];
+        }
+    }
+
+    public function editaLiberacaoCompraInsert() {
+
+        $SQL = "SELECT IDCOMPRA, LIBERACAOCOMPRA
+                FROM compra WHERE AUTORIZACOMPRA1 > 0 AND AUTORIZACOMPRA1 > 0 ";
+
+        //die($SQL); 
+        $con2 = new gtiConexao();
+        $con2->gtiConecta();
+        $tbl2 = $con2->gtiPreencheTabela($SQL);
+        $con2->gtiDesconecta();
+
+        foreach ($tbl2 as $chave => $linha) {
+
+            $bin = decbin($linha['LIBERACAOCOMPRA']);
+
+            $totalSocio = $this->buscaNumSocio();
+            while (strlen($bin) != $totalSocio) {
+                $bin = "0" . $bin;
+            }
+
+            $bin = $bin . "0";
+
+            $SQL = "UPDATE compra SET  
+		LIBERACAOCOMPRA='" . bindec($bin) . "'
+                WHERE IDCOMPRA='" . $linha['IDCOMPRA'] . "'";
+
+            //die($SQL);
+
+            $con = new gtiConexao();
+            $con->gtiConecta();
+            $con->gtiExecutaSQL($SQL);
+            $con->gtiDesconecta();
+        }
+    }
+
+    public function verificaSeCargoDeSocio() {
+
+        $SQL = "SELECT *
+                FROM usuario 
+                WHERE (CARGO = 1 OR CARGO = 2) AND ID = " . $_SESSION['codigo'] . "
+                ORDER BY ID";
+
+        //die($SQL);
+
+        $con = new gtiConexao();
+        $con->gtiConecta();
+        $tbl = $con->gtiPreencheTabela($SQL);
+        $con->gtiDesconecta();
+
+
+        if ($tbl->RecordCount() > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+}
 ?>

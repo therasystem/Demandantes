@@ -1,13 +1,17 @@
 <?php
 session_start();
-require_once("../modelo/gerador_generico.cls.php");
+
 require_once("../config.cls.php");
 require_once("../modelo/usuario.cls.php");
+require_once("../modelo/cargo.cls.php");
 
 $config = new clsConfig();
 
 if ((isset($_SESSION['codigo']))) {
-    $usuario = new clsusuario();
+    $cargo = new clsCargo();
+    $admin = new clsUsuario();
+    $usuario = new clsUsuario();
+    $admin->SelecionaPorCodigo(trim($_SESSION['codigo']));
 
     if ($_GET) {
         $metodo = $_GET['metodo'];
@@ -16,8 +20,8 @@ if ((isset($_SESSION['codigo']))) {
     }
 
     if ($metodo == 1) {
-// EDITAR Exibir dados
-        $cod = $_GET['IDUSUARIO'];
+        // EDITAR Exibir dados
+        $cod = $_GET['idusuario'];
         $usuario->preencheDados($cod);
     }
 } else {
@@ -25,192 +29,109 @@ if ((isset($_SESSION['codigo']))) {
     $config->ConfirmaOperacao($config->GetPaginaPrincipal(), "Voc\xEA n\xE3o tem permiss\xE3o para acessar essa p\xE1gina!");
 }
 ?>
-<html lang="en">
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
     <head>
-        <meta charset="iso-8859-1">
-        <title>Demandantes</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="description" content="">
-        <meta name="author" content="">
+        <title>Sistema Gerenciador de Compras</title>
+        <link rel="shortcut icon" href="../imagens/_favicon.ico" />
+        <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+        <link href="estilo/estilo.css" rel="stylesheet" type="text/css" />
 
-        <!-- Le styles -->
-        <link href="css/styleadmin.css" rel="stylesheet">
-
-        <link href="css/tabela.css" rel="stylesheet">
-
-        <style>
-            body {
-                padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
-                background-color: #f5f5f5;
-            }
-
-
-            .form-signin {
-                max-width: 500px;
-                padding: 19px 29px 29px;
-                margin: 0 auto 20px;
-                background-color: #fff;
-                border: 1px solid #e5e5e5;
-                -webkit-border-radius: 5px;
-                -moz-border-radius: 5px;
-                border-radius: 5px;
-                -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.05);
-                -moz-box-shadow: 0 1px 2px rgba(0,0,0,.05);
-                box-shadow: 0 1px 2px rgba(0,0,0,.05);
-            }
-            .form-signin .form-signin-heading,
-            .form-signin .checkbox {
-                margin-bottom: 10px;
-            }
-            .form-signin input[type="text"],
-            .form-signin input[type="password"] {
-                font-size: 16px;
-                height: auto;
-                margin-bottom: 15px;
-                padding: 7px 9px;
-            }
-
-
-        </style>
-        <link href="css/bootstrap-responsive.css" rel="stylesheet">
-
-        <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
-        <!--[if lt IE 9]>
-          <script src="../assets/js/html5shiv.js"></script>
-        <![endif]-->
-
-        <!-- Fav and touch icons -->
-        <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../assets/ico/apple-touch-icon-144-precomposed.png">
-        <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../assets/ico/apple-touch-icon-114-precomposed.png">
-        <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../assets/ico/apple-touch-icon-72-precomposed.png">
-        <link rel="apple-touch-icon-precomposed" href="../assets/ico/apple-touch-icon-57-precomposed.png">
-        <link rel="shortcut icon" href="../assets/ico/favicon.png">
     </head>
 
     <body>
+  
+        <table align="center" cellpadding="0" cellspacing="0" width="100%">
+            <tr>
+                <td valign="top"> 
+                    <form id="form1" name="form1" method="post" action="usuario.exe.php"> 
+                        <input type="hidden" name="metodo" id="metodo" value="<?php echo $metodo ?>"/>
+                        <input type="hidden" name="codigo" id="codigo" value="<?php echo $admin->getCodigo() ?>"/>
+                        <input type="hidden" name="idusuario" id="idusuario" value="<?php echo $usuario->getCodigo() ?>"/>
+                        <table width="780px" border="0" align="center" cellpadding="0" cellspacing="1">
+                            <tr>
+                                <td>
+                                    <img alt="" src="../imagens/banner.jpg" width="100%"/></td>
+                            </tr>
+                            <tr>
+                                <td width="100%" bgcolor="#EEFFDD">
+                                    <table cellpadding="0" cellspacing="0" class="style4">
+                                        <tr>
+                                            <td width="100%" class="style7 style23">&nbsp;&nbsp; Seja Bem Vindo <?php echo $admin->GetNome(); ?>!&nbsp;</td>
+                                            <td><img src="../imagens/back.png" alt="Voltar" /></td>
+                                            <td>&nbsp;<a href="usuario.frm.php"><b>VOLTAR</b></a></td>
+                                            <td>&nbsp;&nbsp;&nbsp;</td>
+                                            <td class="style6"><img src="../imagens/bt_logout.jpg" alt="Sair" /></td>
+                                            <td>&nbsp;&nbsp;&nbsp;<b><a href="../<?php echo $config->GetPaginaPrincipal() ?>"><b>SAIR</b></a></b></td>
+                                            <td>&nbsp;&nbsp;&nbsp;</td>
+                                        </tr>
+                                    </table>
 
-        <div class="navbar navbar-default navbar-fixed-top">
-            <div class="navbar-inner">
-                <div class="container">
-                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".nav-collapse">
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                    </button>
-                    <a class="navbar-brand" href="#">Cadastro de demandantes</a>
-                    <a href="../index.php" style="text-decoration: none; margin-top:1%" class="navbar-link pull-right"> Logout</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <!-- TABELA GRID-->
+                                    <table width="100%" height="100%" border="0" cellspacing="0" cellpadding="0">
+                                        <tr>
+                                            <td  height="36"><b><br />&nbsp;&nbsp;&nbsp;CADASTRO DE USUARIO<br /> 
+                                                    </tr>
+                                                    <tr>
+                                                        <tr>
+                                                            <td  align="right" class="small">Nome:</td>
+                                                            <td><input class="campo_texto" name="NOME" type="text" value='<?php echo $usuario->getNome() ?>' size="40" maxlength="100"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td  align="right" class="small">Login:</td>
+                                                            <td><input class="campo_texto" name="LOGIN" type="text" value='<?php echo $usuario->getLogin() ?>' size="40" maxlength="100"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td align="right" class="small">Senha: </td>
+                                                            <td><input  class="campo_texto" name="SENHA" id="END" type="password" value='' size="40" maxlength="50">
+                                                            </td>
+                                                        </tr> 
+                                                        <tr>
+                                                            <td align="right" class="small">Cargo: </td>
+                                                            <td>
+                                                                <select name="CARGO">
+                                                                    <?php echo $cargo->ListaComboCargoTiraSocio($usuario->getCargo()); ?>
+                                                                </select>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td></td>
+                                                            <td>
+                                                                <br/>
+                                                                <?php if ($metodo == 1) { ?>
+                                                                    <input name="alterar" type="submit" value="Alterar" />
+                                                                <?php } else { ?>
+                                                                    <input name="salvar" type="submit" value="Salvar" />
+                                                                <?php } ?>
+                                                            </td>
+                                                        </tr>
+                                                    </tr>
+                                                    </table> 
+                                            </td>
+                                        </tr> 
+                                        <tr>
+                                            <td>&nbsp;</td>
+                                        </tr>
+                                        <tr>
+                                            <td bgcolor="#F0FFE0" valign="middle" align="center">
+                                                &nbsp;
+                                                <div align="center"></div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    </form>
+                                </td>
+                            </tr>
+                        </table>
 
-                </div>
-            </div>
-        </div>
+                        </body>
+                        </html>
 
-        <div id="admin" class="container">
-
-            <form id="form1" name="form1" method="POST" action="usuario.exe.php" class="form-signin">
-                <input type="hidden" name="metodo" id="metodo" value="<?php echo $metodo ?>"/>
-                <input type="hidden" name="codigo" id="codigo" value="<?php echo $usuario->getCodigo() ?>"/>
-
-                <div class="panel panel-primary">
-                    <div class="panel-heading">
-                        <h4 >Cadastro de usuário </h4>
-                    </div>
-
-                    <div class="panel-body" > 
-
-                        <div class="form-group">
-                            <label class="control-label" >Nome:</label>
-
-                            <input class="form-control" type="text"  name="NOMEUSU" value="<?php echo $usuario->getNOMEUSU() ?>" >
-
-                        </div>
-                        <div class="form-group">
-                            <label class="control-label" >CPF:</label>
-                            <input class="form-control"  type="text" name="LOGINUSU" value="<?php echo $usuario->getLOGINUSU() ?>" >
-                        </div>
-
-                        <div class="form-group">
-                            <label class="control-label" >Senha:</label>
-                            <input class="form-control"  type="password" name="SENHAUSU"  >
-                        </div>
-
-
-                        <div class="form-group">
-                            <label class="control-label" >Entidade:</label>
-                            <select class="form-control"  name="IDENTIDADE">
-                                <?php if ($metodo < 1) { ?>
-                                    <option value="0" selected="selected"> ----- SELECIONE ----- </option>
-                                <?php } else { ?>
-                                    <option value="0"> ----- SELECIONE ----- </option>
-                                    <?php
-                                }
-                                $gerador = new clsGeradorGenerico("entidade");
-                                echo $gerador->ListaComboALL($usuario->getIDENTIDADE());
-                                ?> 
-                            </select>
-                        </div>
-
-                        <div class="form-group" style="margin-top:2%">
-                            <label class="control-label" >Tipo de usuário:</label>
-
-                            <select class="form-control"  name="IDPERMISSAO">
-                                <?php
-                                if ($metodo < 1) {
-                                    if ($_SESSION['permissao'] == 1) {
-                                        ?> 
-                                        <option value="0" selected="selected"> ----- SELECIONE ----- </option>
-                                        <option value="2">Gestor</option>
-                                        <option value="3">Demandante</option> 
-                                        <?php
-                                    } else {
-                                        ?> 
-                                        <option value="0" selected="selected"> ----- SELECIONE ----- </option>
-                                        <option value="3">Demandante</option> 
-                                        <?php
-                                    }
-                                } else {
-                                    if ($usuario->getIDPERMISSAO() == 1) {
-                                        ?> 
-                                        <option value="1" selected="selected">Administrador</option>
-                                        <?php
-                                    } else if ($usuario->getIDPERMISSAO() == 2) {
-                                        ?> 
-                                        <option value="0"> ----- SELECIONE ----- </option>
-                                        <option value="2" selected="selected">Gestor</option>
-                                        <option value="3">Demandante</option> 
-                                        <?php
-                                    } else {
-                                        ?> 
-                                        <option value="0"> ----- SELECIONE ----- </option>
-                                        <option value="3" selected="selected">Demandante</option> 
-                                        <?php
-                                    }
-                                }
-                                ?> 
-                            </select>
-                        </div>
-                        <a type="submit"  onclick = "document.form1.submit();" class="btn btn-success">Confirmar</a>
-                        <a href="cadastro_usuario.frm.php"  class="btn btn-default">Cancelar</a>
-                    </div>
-                </div>
-            </form>
-        </div> <!-- /container -->
-
-        <!-- Le javascript
-        ================================================== -->
-        <!-- Placed at the end of the document so the pages load faster -->
-        <script src="../assets/js/jquery.js"></script>
-        <script src="../assets/js/bootstrap-transition.js"></script>
-        <script src="../assets/js/bootstrap-alert.js"></script>
-        <script src="../assets/js/bootstrap-modal.js"></script>
-        <script src="../assets/js/bootstrap-dropdown.js"></script>
-        <script src="../assets/js/bootstrap-scrollspy.js"></script>
-        <script src="../assets/js/bootstrap-tab.js"></script>
-        <script src="../assets/js/bootstrap-tooltip.js"></script>
-        <script src="../assets/js/bootstrap-popover.js"></script>
-        <script src="../assets/js/bootstrap-button.js"></script>
-        <script src="../assets/js/bootstrap-collapse.js"></script>
-        <script src="../assets/js/bootstrap-carousel.js"></script>
-        <script src="../assets/js/bootstrap-typeahead.js"></script>
-
-    </body>
-</html>
